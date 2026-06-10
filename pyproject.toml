@@ -1,0 +1,48 @@
+[project]
+name = "bimmuda-feature-analysis"
+version = "0.1.0"
+authors = [
+  { name = "David Whyatt", email = "dmw56@cam.ac.uk" },
+]
+description = "Analysis tools for Billboard vocal melody feature datasets (.npz)."
+readme = "README.md"
+requires-python = ">=3.9"
+dependencies = [
+    "matplotlib",
+    "numpy",
+    "pandas",
+    "plotly",
+    "scikit-learn",
+    "scipy",
+    "seaborn",
+    "tqdm",
+]
+classifiers = [
+    "Programming Language :: Python :: 3",
+    "Operating System :: MacOS",
+    "Operating System :: POSIX :: Linux",
+]
+license = "MIT"
+
+[project.optional-dependencies]
+dev = [
+    "pytest>=8.0.0",
+]
+
+[project.scripts]
+bimmuda-cluster = "bimmuda_feature_analysis.__main__:main"
+bimmuda-efa = "bimmuda_feature_analysis.efa:main"
+bimmuda-style-factors = "bimmuda_feature_analysis.style_factors:main"
+
+[build-system]
+requires = ["setuptools>=61.0", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[tool.setuptools.packages.find]
+where = ["src"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+markers = [
+    "slow: integration tests that load the full features directory",
+]
