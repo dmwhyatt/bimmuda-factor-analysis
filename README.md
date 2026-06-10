@@ -1,175 +1,41 @@
 # bimmuda-feature-analysis
 
-Tools for loading and analysing scalar melody features extracted from [BiMMuDa](https://github.com/madelinehamilton/BiMMuDa) Billboard vocal melodies (Hot 100 top 5 per chart year).
+EFA of melody features in [BiMMuDa](https://github.com/madelinehamilton/BiMMuDa) — Billboard Hot 100 **top 5 per chart year** (366 songs × 220 scalar features from [melody-features](https://github.com/dmwhyatt/melody-features)).
 
-Each song is stored as a compressed `.npz` file produced by the [audio-symbolic-pipeline](https://github.com/dmwhyatt/audio-symbolic-pipeline) ([Music-Source-Separation-Training v1.0.21](https://github.com/ZFTurbo/Music-Source-Separation-Training/releases/tag/v1.0.21) vocal separation → [ROSVOT](https://github.com/RickyL-2000/ROSVOT) transcription → [melody-features](https://github.com/dmwhyatt/melody-features)). This repo loads those files into a tidy table and supports exploratory analysis, including clustering.
+We fit a **Billboard-native** factor model (parallel analysis → promax EFA via R `psych`, following [Style-Classification-Analysis](https://github.com/dmwhyatt/Style-Classification-Analysis)), name factors from their loadings, and test whether factor scores **change over chart decades**. Clustering scripts are leftover from earlier exploration.
 
-## Installation
+## Install
 
 ```bash
-cd bimmuda-feature-analysis
+git clone https://github.com/dmwhyatt/bimmuda-factor-analysis.git
+cd bimmuda-factor-analysis
 pip install -e ".[dev]"
 ```
 
-## Quick start
+Python 3.9+. EFA requires R with `psych`, `tidyverse`, and `jsonlite`. Point commands at a directory of `.npz` feature files (optional env: `BIMMUDA_FEATURES_DIR`, `BIMMUDA_METADATA_CSV`).
 
-```python
-from pathlib import Path
-
-from bimmuda_feature_analysis import load_features_dir, cluster_songs
-
-features_dir = Path("/Users/davidwhyatt/features")
-df = load_features_dir(features_dir)
-print(df.shape)  # (366, 223) — metadata + 220 scalar features
-
-result = cluster_songs(df, n_clusters=6)
-print(result[["artist", "title", "cluster"]].head())
-```
-
-Run clustering from the command line (writes CSVs and plots to `outputs/`):
+## Run
 
 ```bash
-python -m bimmuda_feature_analysis /Users/davidwhyatt/features --clusters 2 --sweep
+bimmuda-efa /path/to/features
 ```
 
-Cluster by **chart decade** (from BiMMuDa metadata — the year each song charted in the Hot 100 top 5):
+Main result: **`outputs/efa_factor_trends_dashboard.html`** — interactive gallery of retained factors (F1–F20) with decade means and per-song hover. Also writes scree plot, loadings, factor scores, and Kruskal–Wallis tests to `outputs/`.
 
-```bash
-python -m bimmuda_feature_analysis /Users/davidwhyatt/features --by-decade
-```
+## How it works
 
-Or run melody k-means **within each decade**:
+1. **Parallel analysis** — retain factors whose eigenvalues exceed a random-data null (~20 for this corpus).
+2. **Promax EFA** — extract factors, score each song, interpret from top loadings (`efa_retained_factor_interpretations.csv`).
+3. **Trends** — decade means ± SEM; Kruskal–Wallis by decade (`efa_decade_kruskal.csv`).
 
-```bash
-python -m bimmuda_feature_analysis /Users/davidwhyatt/features --within-decade --clusters 2
-```
+## Optional
 
-Set `BIMMUDA_METADATA_CSV` to override the default metadata path.
+Included in the repository are some early versions of analysis that ultimately didn't prove to be as promising.
 
-The `--sweep` flag writes silhouette scores for k=2..10 to help pick a cluster count.
+**Style-Classification factors** — score BiMMuDa with the Essen/China/Europe loading matrix instead of fitting new factors (`bimmuda-style-factors`; needs `STYLE_CLASSIFICATION_DIR`).
 
-## Exploratory factor analysis (EFA)
+**Clustering** — earlier attempt at k-means on raw features (`bimmuda-cluster`).
 
-Primary analysis follows [Style-Classification-Analysis](https://github.com/dmwhyatt/Style-Classification-Analysis): parallel analysis → promax-rotated principal-axis EFA via R `psych`, then chart-year trend evaluation.
+## License
 
-Requires **R** with packages `psych`, `tidyverse`, and `jsonlite`.
-
-```bash
-bimmuda-efa /Users/davidwhyatt/features
-```
-
-Or:
-
-```bash
-python -m bimmuda_feature_analysis.efa /Users/davidwhyatt/features
-```
-
-Optional flags: `--factors N` (override parallel-analysis suggestion), `--parallel-iter 100`, `--no-trends`, `--scree-only`, `--refresh-uncertainty`.
-
-The scree plot includes **95% bootstrap CIs** on observed eigenvalues and a **95% simulation envelope** for the null reference (100 bootstrap resamples, 100 random-data simulations).
-
-Outputs in `outputs/`:
-
-| File | Content |
-|------|---------|
-| `efa_parallel_scree.pdf` | Observed vs simulated eigenvalues |
-| `efa_parallel_scree.html` | **Interactive** parallel scree (Plotly — hover, zoom, **95% CIs**) |
-| `efa_top_loadings.csv` | Top 10 \|loading\| per factor (for naming) |
-| `efa_factor_scores.csv` | Regression factor scores + chart metadata |
-| `efa_variance.csv` | SS loadings and cumulative variance |
-| `efa_trends_by_year.csv` | Spearman ρ (factor vs chart year; supplementary) |
-| `efa_factor_trends_dashboard.png` | Compact **overview grid** of retained factors (mean ± SEM) |
-| `efa_retained_factor_interpretations.csv` | Names and top loadings for all null-retained factors |
-| `efa_factor_trends_dashboard.html` | **Interactive report** — pipeline & EFA overview plus browsable factor trend gallery |
-| `docs/index.html` | Same report, published for **GitHub Pages** (regenerated by `bimmuda-efa`) |
-| `efa_factor_trends_overview.png` | Normalized trajectories for all factors |
-| `efa_decade_kruskal.csv` | **Kruskal-Wallis H** (factor vs chart decade) |
-| `efa_trends_by_decade.csv` | Mean factor scores by decade |
-| `efa_timelines/F*.png` | Factor score vs chart year plots |
-
-```python
-from bimmuda_feature_analysis import load_features_dir, run_efa, evaluate_factor_trends
-
-df = load_features_dir("/Users/davidwhyatt/features")
-result = run_efa(df, output_dir="outputs")
-evaluate_factor_trends(result)
-```
-
-Interpret factors using `efa_top_loadings.csv` (as in Style-Classification), then inspect temporal trends before clustering or regression.
-
-### Style-Classification factor tracking
-
-Apply the **Essen/China/Europe** factor structure from [Style-Classification-Analysis](https://github.com/dmwhyatt/Style-Classification-Analysis) to Billboard melodies (regression factor scores via R `psych`), then track those named factors over chart years. This uses the folk-song EFA loadings rather than a Billboard-native factor solution.
-
-Requires the Style-Classification project (with `essen_china_europe_features.csv`). Override path with `STYLE_CLASSIFICATION_DIR`.
-
-```bash
-bimmuda-style-factors /Users/davidwhyatt/features
-```
-
-Or:
-
-```bash
-python -m bimmuda_feature_analysis.style_factors /Users/davidwhyatt/features
-```
-
-Outputs in `outputs/`:
-
-| File | Content |
-|------|---------|
-| `style_factor_scores.csv` | Regression scores + chart metadata + factor names |
-| `style_factor_loadings.csv` | Full Style-Classification loading matrix |
-| `style_factor_top_loadings.csv` | Top 10 \|loading\| per factor |
-| `style_factor_decade_kruskal.csv` | **Kruskal-Wallis H** (factor vs chart decade) |
-| `style_factor_trends_by_year.csv` | Spearman ρ (factor vs chart year; supplementary) |
-| `style_factor_trends_by_decade.csv` | Mean factor scores by decade |
-| `style_factor_timelines/F*.png` | Named factor vs chart year plots |
-
-```python
-from bimmuda_feature_analysis import (
-    load_features_dir,
-    run_style_factor_scoring,
-    evaluate_style_factor_trends,
-)
-
-df = load_features_dir("/Users/davidwhyatt/features")
-result = run_style_factor_scoring(df, style_project_dir="/Users/davidwhyatt/Style-Classification-Analysis")
-evaluate_style_factor_trends(result)
-```
-
-
-```
-src/bimmuda_feature_analysis/
-  loader.py    # load .npz files into a DataFrame
-  catalog.py   # parse artist/title from filenames
-  schema.py    # feature categories and metadata keys
-  metadata.py  # join BiMMuDa chart year / decade metadata
-  preprocess.py # EFA matrix prep (matches Style-Classification)
-  efa.py       # export features, run R/psych EFA, load outputs
-  efa_trends.py # factor score trends vs chart year
-  style_factors.py # Style-Classification loadings → Billboard scores + trends
-  cluster.py   # PCA/k-means clustering (exploratory)
-scripts/
-  factor_billboard.R  # psych EFA (parallel analysis, promax)
-  style_factor_scores.R  # apply Style-Classification loadings to Billboard
-notebooks/
-  01_clustering.ipynb
-tests/
-```
-
-## Data format
-
-Each `.npz` file contains 220 scalar features keyed as `category.feature_name`, plus non-scalar arrays (`features_json`, `rosvot_pitches`, `rosvot_note_durs`) that this package ignores.
-
-Default features path can be overridden with the `BIMMUDA_FEATURES_DIR` environment variable.
-
-## GitHub Pages
-
-The EFA trend report is published to `docs/` whenever factor trends are evaluated (part of `bimmuda-efa`). To host it:
-
-1. Push the repository to GitHub.
-2. In **Settings → Pages**, set **Build and deployment → Source** to **Deploy from a branch**.
-3. Choose branch `main` (or your default) and folder **`/docs`**.
-4. After the workflow completes, the site is available at `https://<user>.github.io/<repo>/`.
-
-The site includes overview text (audio-to-MIDI pipeline, EFA methodology) and the interactive factor gallery. Re-run `bimmuda-efa` after updating analysis outputs to refresh `docs/index.html` and `docs/scree.html`.
+MIT
