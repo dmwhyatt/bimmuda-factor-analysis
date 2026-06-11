@@ -25,11 +25,15 @@ classifiers = [
 license = "MIT"
 
 [project.optional-dependencies]
+billboard = [
+    "yt-dlp>=2025.1.0",
+]
 dev = [
     "pytest>=8.0.0",
 ]
 
 [project.scripts]
+bimmuda-billboard = "bimmuda_feature_analysis.billboard_dataset:main"
 bimmuda-cluster = "bimmuda_feature_analysis.__main__:main"
 bimmuda-efa = "bimmuda_feature_analysis.efa:main"
 bimmuda-style-factors = "bimmuda_feature_analysis.style_factors:main"
