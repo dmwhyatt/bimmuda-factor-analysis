@@ -5,14 +5,26 @@ from __future__ import annotations
 import pandas as pd
 
 BILLBOARD_FACTOR_LABELS: dict[str, str] = {
-    "F1": "Long, variable note durations",
-    "F2": "Corpus-distinctive scalar melody",
-    "F3": "Rest-heavy, gap-filled phrasing",
-    "F4": "Unpredictable interval content",
-    "F5": "Wide-ranging volatile contour",
-    "F6": "Diffuse pitch focus, stepwise",
-    "F7": "Chromatic / less diatonic",
-    "F8": "Strong consolidated metric pulse",
+    "F1": "Long varied durations",
+    "F2": "Distinct scalar regularity",
+    "F3": "Sparse rest-heavy phrasing",
+    "F4": "Wide interval variability",
+    "F5": "Diverse interval vocabulary",
+    "F6": "Stable in-scale motion",
+    "F7": "Chromatic stepwise motion",
+    "F8": "Dominant metric pulse",
+    "F9": "Mobile pitch variety",
+    "F10": "Strong secondary pulse",
+    "F11": "Higher register",
+    "F12": "Distributed pitch focus",
+    "F13": "Uneven long rhythms",
+    "F14": "Corpus-weighted vocabulary",
+    "F15": "Strong primary pulse",
+    "F16": "Wide rhythmic span",
+    "F17": "Pitch-class center",
+    "F18": "Primary pulse dominance",
+    "F19": "Tonal expectation tension",
+    "F20": "Upward melodic direction",
 }
 
 FACTOR_TREND_COLORS = (

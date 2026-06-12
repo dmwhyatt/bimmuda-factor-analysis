@@ -11,7 +11,10 @@ import pandas as pd
 DEFAULT_METADATA_PATH = Path(
     os.environ.get(
         "BIMMUDA_METADATA_CSV",
-        "/Users/davidwhyatt/AMT-evaluation/data/bimmuda/metadata/bimmuda_per_song_metadata.csv",
+        os.environ.get(
+            "BILLBOARD_HOT100_METADATA_CSV",
+            "/Users/davidwhyatt/AMT-evaluation/data/bimmuda/metadata/bimmuda_per_song_metadata.csv",
+        ),
     )
 )
 
